@@ -1,5 +1,6 @@
 'use client';
 
+import { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -7,7 +8,7 @@ import { ChevronLeft, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
-  title?: string;
+  title?: ReactNode;
   showBack?: boolean;
   backHref?: string;
   leftAction?: React.ReactNode;
