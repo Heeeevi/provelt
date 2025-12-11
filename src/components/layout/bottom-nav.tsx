@@ -6,10 +6,10 @@ import { cn } from '@/lib/utils';
 import { Home, Target, User, Compass } from 'lucide-react';
 
 const navItems = [
-  { href: '/feed', icon: Home, label: 'Feed' },
-  { href: '/challenges', icon: Target, label: 'Challenges' },
-  { href: '/explore', icon: Compass, label: 'Explore' },
-  { href: '/profile', icon: User, label: 'Profile' },
+  { href: '/feed', icon: Home, label: 'Feed', onboardingId: 'nav-feed' },
+  { href: '/challenges', icon: Target, label: 'Challenges', onboardingId: 'nav-challenges' },
+  { href: '/explore', icon: Compass, label: 'Explore', onboardingId: 'nav-explore' },
+  { href: '/profile', icon: User, label: 'Profile', onboardingId: 'nav-profile' },
 ];
 
 export function BottomNav() {
@@ -24,6 +24,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              data-onboarding={item.onboardingId}
               className={cn(
                 'flex flex-col items-center justify-center w-16 h-full transition-colors',
                 isActive ? 'text-brand-500' : 'text-surface-500 hover:text-surface-300'

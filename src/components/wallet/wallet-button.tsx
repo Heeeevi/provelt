@@ -208,6 +208,7 @@ export function WalletButton({ className, showBalance = false }: WalletButtonPro
         <Button
           onClick={handleConnect}
           disabled={connecting}
+          data-onboarding="wallet-button"
           className={cn(
             'bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700',
             'text-white font-medium',
