@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useSolanaWallet } from '@/hooks/use-solana-wallet';
+import { MobileWalletModal, useMobileWallet } from './mobile-wallet-modal';
 
 interface WalletButtonProps {
   className?: string;
@@ -26,6 +27,13 @@ export function WalletButton({ className, showBalance = false }: WalletButtonPro
   const { setVisible } = useWalletModal();
   const { connected, connecting, publicKey } = useWallet();
   const { truncatedAddress, explorerUrl, disconnect, getBalance } = useSolanaWallet();
+  const { 
+    isMobileDevice, 
+    isWalletBrowser, 
+    showMobileModal, 
+    openWalletConnect, 
+    closeMobileModal 
+  } = useMobileWallet();
   
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -33,8 +41,9 @@ export function WalletButton({ className, showBalance = false }: WalletButtonPro
   const [loadingBalance, setLoadingBalance] = useState(false);
 
   const handleConnect = useCallback(() => {
-    setVisible(true);
-  }, [setVisible]);
+    // Use mobile-aware connect
+    openWalletConnect();
+  }, [openWalletConnect]);
 
   const handleCopyAddress = useCallback(async () => {
     if (publicKey) {
@@ -62,27 +71,32 @@ export function WalletButton({ className, showBalance = false }: WalletButtonPro
   // Not connected - show connect button
   if (!connected) {
     return (
-      <Button
-        onClick={handleConnect}
-        disabled={connecting}
-        className={cn(
-          'bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700',
-          'text-white font-medium',
-          className
-        )}
-      >
-        {connecting ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Connecting...
-          </>
-        ) : (
-          <>
-            <Wallet className="w-4 h-4 mr-2" />
-            Connect Wallet
-          </>
-        )}
-      </Button>
+      <>
+        <Button
+          onClick={handleConnect}
+          disabled={connecting}
+          className={cn(
+            'bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700',
+            'text-white font-medium',
+            className
+          )}
+        >
+          {connecting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Connecting...
+            </>
+          ) : (
+            <>
+              <Wallet className="w-4 h-4 mr-2" />
+              Connect Wallet
+            </>
+          )}
+        </Button>
+        
+        {/* Mobile wallet modal */}
+        <MobileWalletModal isOpen={showMobileModal} onClose={closeMobileModal} />
+      </>
     );
   }
 

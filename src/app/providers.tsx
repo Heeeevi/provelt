@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { useState, type ReactNode } from 'react';
 import { WalletProvider } from '@/components/providers/wallet-provider';
 import { AuthProvider } from '@/components/providers/auth-provider';
+import { WalletAutoConnect } from '@/components/wallet';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -52,6 +53,8 @@ export function Providers({ children }: ProvidersProps) {
               },
             }}
           />
+          {/* Auto-detect and prompt for mobile wallet */}
+          <WalletAutoConnect />
         </AuthProvider>
       </WalletProvider>
     </QueryClientProvider>
