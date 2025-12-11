@@ -195,22 +195,22 @@ function SubmissionSlide({
 
   // Check if user has liked
   useEffect(() => {
+    const checkIfLiked = async () => {
+      if (!userId) return;
+      const { data } = await supabase
+        .from('reactions')
+        .select('id')
+        .eq('submission_id', submission.id)
+        .eq('user_id', userId)
+        .eq('reaction_type', 'like')
+        .maybeSingle();
+      setLiked(!!data);
+    };
+
     if (userId && submission.id) {
       checkIfLiked();
     }
   }, [userId, submission.id]);
-
-  const checkIfLiked = async () => {
-    if (!userId) return;
-    const { data } = await supabase
-      .from('reactions')
-      .select('id')
-      .eq('submission_id', submission.id)
-      .eq('user_id', userId)
-      .eq('reaction_type', 'like')
-      .maybeSingle();
-    setLiked(!!data);
-  };
 
   // Handle like
   const handleLike = async () => {

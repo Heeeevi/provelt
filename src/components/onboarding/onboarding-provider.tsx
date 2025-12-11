@@ -100,8 +100,19 @@ const OnboardingContext = createContext<OnboardingContextType | null>(null);
 
 export function useOnboarding() {
   const context = useContext(OnboardingContext);
+  // Return default values if context is not available (e.g., during SSR/prerender)
   if (!context) {
-    throw new Error('useOnboarding must be used within OnboardingProvider');
+    return {
+      isOnboarding: false,
+      currentStep: 0,
+      steps: [],
+      startOnboarding: () => {},
+      nextStep: () => {},
+      prevStep: () => {},
+      skipOnboarding: () => {},
+      completeOnboarding: () => {},
+      hasCompletedOnboarding: true,
+    };
   }
   return context;
 }
@@ -135,13 +146,19 @@ export function OnboardingProvider({ children, steps = DEFAULT_STEPS }: Onboardi
     setIsOnboarding(true);
   }, []);
 
+  const completeOnboarding = useCallback(() => {
+    setIsOnboarding(false);
+    localStorage.setItem('provelt_onboarding_completed', 'true');
+    setHasCompletedOnboarding(true);
+  }, []);
+
   const nextStep = useCallback(() => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
       completeOnboarding();
     }
-  }, [currentStep, steps.length]);
+  }, [currentStep, steps.length, completeOnboarding]);
 
   const prevStep = useCallback(() => {
     if (currentStep > 0) {
@@ -150,12 +167,6 @@ export function OnboardingProvider({ children, steps = DEFAULT_STEPS }: Onboardi
   }, [currentStep]);
 
   const skipOnboarding = useCallback(() => {
-    setIsOnboarding(false);
-    localStorage.setItem('provelt_onboarding_completed', 'true');
-    setHasCompletedOnboarding(true);
-  }, []);
-
-  const completeOnboarding = useCallback(() => {
     setIsOnboarding(false);
     localStorage.setItem('provelt_onboarding_completed', 'true');
     setHasCompletedOnboarding(true);

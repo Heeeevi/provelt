@@ -505,8 +505,8 @@ export interface ProfileWithStats extends Profile {
 
 export interface FeedItem {
   submission: SubmissionWithRelations;
-  profile: Profile;
-  challenge: Challenge;
+  profile: Profile | null;
+  challenge: Challenge | null;
 }
 
 // ============================================

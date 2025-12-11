@@ -45,6 +45,11 @@ export function FeedCard({ item, isActive = false, onReact, onShare }: FeedCardP
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Early return if missing data
+  if (!profile || !challenge) {
+    return null;
+  }
+
   const handleLike = () => {
     setIsLiked(!isLiked);
     setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
