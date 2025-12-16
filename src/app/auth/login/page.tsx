@@ -11,6 +11,16 @@ import {
   ChevronLeft,
   Loader2,
   AlertCircle,
+  CheckCircle,
+  Sparkles,
+  Trophy,
+  Users,
+  Gift,
+  Lock,
+  Eye,
+  EyeOff,
+  UserPlus,
+  LogIn,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,48 +33,108 @@ import { LOGO_URL, APP_NAME } from '@/lib/constants';
 
 /**
  * Login Page
- * Supabase Auth login with email magic link or wallet
+ * Email + Password login with optional wallet connection for Web3 features
  */
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSent, setIsSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [showWalletOption, setShowWalletOption] = useState(false);
   
-  const { publicKey, connected, signMessage } = useWallet();
+  const { publicKey, connected } = useWallet();
   const { setVisible } = useWalletModal();
 
-  // Handle magic link login
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  // Handle email + password login
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
+        password,
+      });
+
+      if (error) {
+        console.error('Login error:', error);
+        if (error.message.includes('Invalid login credentials')) {
+          throw new Error('Email atau password salah. Coba lagi atau daftar akun baru.');
+        }
+        throw error;
+      }
+
+      if (data.user) {
+        router.push('/feed');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Login gagal');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle email + password signup
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    // Validate password
+    if (password.length < 6) {
+      setError('Password minimal 6 karakter');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Password tidak sama');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
       if (error) {
-        // Provide more helpful error messages
-        if (error.message.includes('Database error')) {
-          throw new Error('Email service is not configured. Please try connecting with your wallet instead, or contact support.');
+        console.error('Signup error:', error);
+        if (error.message.includes('already registered')) {
+          throw new Error('Email sudah terdaftar. Silakan login.');
         }
         throw error;
       }
-      setIsSent(true);
+
+      // Check if email confirmation is required
+      if (data.user && !data.session) {
+        setSuccess('Akun berhasil dibuat! Cek email untuk konfirmasi, atau langsung login.');
+        setIsSignUp(false);
+        setPassword('');
+        setConfirmPassword('');
+      } else if (data.session) {
+        // Auto-logged in (email confirmation disabled)
+        router.push('/feed');
+      }
     } catch (err: any) {
-      setError(err.message || 'Failed to send magic link');
+      setError(err.message || 'Gagal membuat akun');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle wallet login - simplified: just connect and redirect
+  // Handle wallet login
   const handleWalletLogin = async () => {
     setError(null);
     
@@ -72,55 +142,15 @@ export default function LoginPage() {
       try {
         setVisible(true);
       } catch (err) {
-        setError('Failed to open wallet modal. Please make sure you have a Solana wallet installed.');
+        setError('Gagal membuka wallet. Pastikan kamu sudah install wallet Solana.');
       }
       return;
     }
 
-    // Already connected - just redirect to feed
     if (publicKey) {
-      console.log('Wallet connected:', publicKey.toString());
       router.push('/feed');
-      return;
     }
-
-    setError('Wallet connection pending. Please try again.');
   };
-
-  // Success state - magic link sent
-  if (isSent) {
-    return (
-      <main className="min-h-screen bg-surface-950 flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-md"
-        >
-          <Card>
-            <CardContent className="p-8 text-center">
-              <div className="w-16 h-16 rounded-full bg-brand-500/20 flex items-center justify-center mx-auto mb-6">
-                <Mail className="w-8 h-8 text-brand-500" />
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Check your email</h2>
-              <p className="text-surface-400 mb-6">
-                We sent a magic link to <span className="text-white">{email}</span>
-              </p>
-              <p className="text-surface-500 text-sm">
-                Click the link in the email to sign in. If you don't see it, check your spam folder.
-              </p>
-              <Button 
-                variant="ghost" 
-                className="mt-6"
-                onClick={() => setIsSent(false)}
-              >
-                Use a different email
-              </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </main>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-surface-950 flex items-center justify-center p-4">
@@ -154,13 +184,47 @@ export default function LoginPage() {
               <span className="gradient-text">PROVE</span>
               <span className="text-white">LT</span>
             </div>
-            <CardTitle className="text-xl">Welcome back</CardTitle>
+            <CardTitle className="text-xl">
+              {isSignUp ? 'Buat Akun Baru' : 'Selamat Datang!'}
+            </CardTitle>
             <CardDescription>
-              Sign in to continue your journey
+              {isSignUp 
+                ? 'Daftar gratis dan mulai buktikan skill-mu' 
+                : 'Masuk untuk melanjutkan perjalananmu'}
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-5">
+            {/* Benefits - Why sign up (only show on signup) */}
+            {isSignUp && (
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="flex items-center gap-2 text-surface-400">
+                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                  <span>100% Gratis</span>
+                </div>
+                <div className="flex items-center gap-2 text-surface-400">
+                  <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>Dapat XP & badge</span>
+                </div>
+                <div className="flex items-center gap-2 text-surface-400">
+                  <Users className="w-4 h-4 text-brand-500 shrink-0" />
+                  <span>Gabung 10K+ user</span>
+                </div>
+                <div className="flex items-center gap-2 text-surface-400">
+                  <Gift className="w-4 h-4 text-purple-500 shrink-0" />
+                  <span>Menangkan hadiah</span>
+                </div>
+              </div>
+            )}
+
+            {/* Success Alert */}
+            {success && (
+              <Alert className="bg-green-500/10 border-green-500/20">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <AlertDescription className="text-green-400">{success}</AlertDescription>
+              </Alert>
+            )}
+
             {/* Error Alert */}
             {error && (
               <Alert variant="destructive">
@@ -169,16 +233,105 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            {/* Wallet Login */}
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleWalletLogin}
-              disabled={isLoading}
-            >
-              <Wallet className="w-4 h-4 mr-2" />
-              {connected ? `Connected: ${publicKey?.toString().slice(0, 8)}...` : 'Connect Wallet'}
-            </Button>
+            {/* Login/Signup Form */}
+            <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="space-y-4">
+              {/* Email */}
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-500" />
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-12 pl-11"
+                />
+              </div>
+
+              {/* Password */}
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-500" />
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="h-12 pl-11 pr-11"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-500 hover:text-surface-300"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+
+              {/* Confirm Password (signup only) */}
+              {isSignUp && (
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-500" />
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Konfirmasi Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="h-12 pl-11"
+                  />
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <Button 
+                type="submit" 
+                className="w-full h-12 text-base"
+                disabled={isLoading || !email || !password || (isSignUp && !confirmPassword)}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {isSignUp ? 'Membuat akun...' : 'Masuk...'}
+                  </>
+                ) : (
+                  <>
+                    {isSignUp ? (
+                      <>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Daftar Sekarang
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="w-4 h-4 mr-2" />
+                        Masuk
+                      </>
+                    )}
+                  </>
+                )}
+              </Button>
+            </form>
+
+            {/* Toggle Login/Signup */}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError(null);
+                  setSuccess(null);
+                }}
+                className="text-sm text-surface-400 hover:text-white transition-colors"
+              >
+                {isSignUp ? (
+                  <>Sudah punya akun? <span className="text-brand-500">Masuk</span></>
+                ) : (
+                  <>Belum punya akun? <span className="text-brand-500">Daftar gratis</span></>
+                )}
+              </button>
+            </div>
 
             {/* Divider */}
             <div className="relative">
@@ -186,49 +339,48 @@ export default function LoginPage() {
                 <span className="w-full border-t border-surface-800" />
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-surface-900 px-2 text-surface-500">or continue with email</span>
+                <span className="bg-surface-900 px-2 text-surface-500">atau</span>
               </div>
             </div>
 
-            {/* Email Login */}
-            <form onSubmit={handleEmailLogin} className="space-y-4">
-              <div>
-                <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <Button 
-                type="submit" 
-                className="w-full"
-                disabled={isLoading || !email}
+            {/* Wallet Option */}
+            {!showWalletOption ? (
+              <button
+                type="button"
+                onClick={() => setShowWalletOption(true)}
+                className="w-full text-center text-sm text-surface-500 hover:text-surface-300 transition-colors"
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <Mail className="w-4 h-4 mr-2" />
-                    Send Magic Link
-                  </>
-                )}
-              </Button>
-            </form>
+                <span className="flex items-center justify-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Punya crypto wallet? Login dengan wallet
+                </span>
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-surface-500 text-center">
+                  Connect wallet untuk mint NFT badge (opsional)
+                </p>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleWalletLogin}
+                  disabled={isLoading}
+                >
+                  <Wallet className="w-4 h-4 mr-2" />
+                  {connected ? `Connected: ${publicKey?.toString().slice(0, 8)}...` : 'Connect Wallet'}
+                </Button>
+              </div>
+            )}
 
             {/* Terms */}
             <p className="text-xs text-surface-500 text-center">
-              By continuing, you agree to our{' '}
+              Dengan melanjutkan, kamu setuju dengan{' '}
               <Link href="/terms" className="text-brand-500 hover:underline">
-                Terms of Service
+                Syarat & Ketentuan
               </Link>{' '}
-              and{' '}
+              dan{' '}
               <Link href="/privacy" className="text-brand-500 hover:underline">
-                Privacy Policy
+                Kebijakan Privasi
               </Link>
             </p>
           </CardContent>

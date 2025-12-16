@@ -33,21 +33,13 @@ const DEFAULT_STEPS: OnboardingStep[] = [
   {
     id: 'welcome',
     title: 'Welcome to PROVELT! 🎉',
-    description: 'PROVELT is a Web3 social platform where you complete challenges, prove your achievements, and earn NFT badges. Let us show you around!',
+    description: 'Turn your skills into verified achievements. Complete challenges, build your portfolio, and unlock real opportunities!',
     icon: <Sparkles className="w-8 h-8" />,
-  },
-  {
-    id: 'wallet',
-    title: 'Connect Your Wallet',
-    description: 'First, connect your Solana wallet (like Phantom or Solflare). This is your identity on PROVELT - no email or password needed!',
-    icon: <Wallet className="w-8 h-8" />,
-    targetSelector: '[data-onboarding="wallet-button"]',
-    position: 'bottom',
   },
   {
     id: 'explore',
     title: 'Explore Challenges',
-    description: 'Browse available challenges in the Explore page. Find something interesting - fitness, coding, creativity, and more!',
+    description: 'Browse challenges in coding, fitness, trading, design, and more. Find something that matches your skills!',
     icon: <Compass className="w-8 h-8" />,
     targetSelector: '[data-onboarding="nav-explore"]',
     position: 'bottom',
@@ -55,7 +47,7 @@ const DEFAULT_STEPS: OnboardingStep[] = [
   {
     id: 'challenges',
     title: 'Join a Challenge',
-    description: 'Pick a challenge that interests you. Each challenge has requirements and rewards - complete them to earn points and NFT badges!',
+    description: 'Pick a challenge you like. Each one has clear requirements - complete them to earn XP, badges, and even real rewards!',
     icon: <Trophy className="w-8 h-8" />,
     targetSelector: '[data-onboarding="nav-challenges"]',
     position: 'bottom',
@@ -63,23 +55,31 @@ const DEFAULT_STEPS: OnboardingStep[] = [
   {
     id: 'submit',
     title: 'Submit Your Proof',
-    description: 'Completed a challenge? Submit photo or video proof. Our community will verify your achievement!',
+    description: 'Completed a challenge? Upload a screenshot, video, or link as proof. It\'s that simple!',
     icon: <Upload className="w-8 h-8" />,
     targetSelector: '[data-onboarding="nav-submit"]',
     position: 'bottom',
   },
   {
     id: 'profile',
-    title: 'Build Your Profile',
-    description: 'Your profile showcases all your achievements, NFT badges, and stats. The more you prove, the more you earn!',
+    title: 'Build Your Portfolio',
+    description: 'Your profile showcases all achievements. Share it on LinkedIn, Twitter, or with potential clients & employers!',
     icon: <User className="w-8 h-8" />,
     targetSelector: '[data-onboarding="nav-profile"]',
     position: 'bottom',
   },
   {
+    id: 'wallet',
+    title: 'Optional: Mint NFT Badges',
+    description: 'Want permanent, blockchain-verified proof? Connect a crypto wallet anytime to mint your achievements as NFTs. Totally optional!',
+    icon: <Wallet className="w-8 h-8" />,
+    targetSelector: '[data-onboarding="wallet-button"]',
+    position: 'bottom',
+  },
+  {
     id: 'complete',
-    title: 'You\'re All Set! 🚀',
-    description: 'That\'s it! Start exploring challenges and prove what you can do. Your achievements live forever on the blockchain!',
+    title: 'You\'re Ready! 🚀',
+    description: 'Start proving what you can do. Complete challenges, grow your portfolio, and unlock opportunities. Let\'s go!',
     icon: <CheckCircle2 className="w-8 h-8" />,
   },
 ];
@@ -130,7 +130,6 @@ export function OnboardingProvider({ children, steps = DEFAULT_STEPS }: Onboardi
   const [currentStep, setCurrentStep] = useState(0);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const [wasConnected, setWasConnected] = useState(false);
   
   const { connected } = useWallet();
 
@@ -142,23 +141,12 @@ export function OnboardingProvider({ children, steps = DEFAULT_STEPS }: Onboardi
       setHasCompletedOnboarding(true);
     } else {
       setHasCompletedOnboarding(false);
-    }
-  }, []);
-
-  // Trigger onboarding when user first connects wallet
-  useEffect(() => {
-    if (!mounted) return;
-    
-    // Detect first-time wallet connection
-    if (connected && !wasConnected && !hasCompletedOnboarding) {
-      // User just connected wallet for the first time
+      // Auto-start onboarding for new users after a short delay
       setTimeout(() => {
         setIsOnboarding(true);
-      }, 800); // Small delay for smooth transition
+      }, 1000);
     }
-    
-    setWasConnected(connected);
-  }, [connected, wasConnected, hasCompletedOnboarding, mounted]);
+  }, []);
 
   const startOnboarding = useCallback(() => {
     setCurrentStep(0);

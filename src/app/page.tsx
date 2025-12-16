@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { LOGO_URL, APP_NAME, APP_TAGLINE } from '@/lib/constants';
-import { CheckCircle, TrendingUp, Users, Zap, Award, Globe } from 'lucide-react';
+import { CheckCircle, TrendingUp, Users, Zap, Award, Globe, DollarSign, Gift, Flame, Target } from 'lucide-react';
 
 export default function HomePage() {
   return (
@@ -108,7 +108,7 @@ export default function HomePage() {
               From Skill to Income in 3 Steps
             </h2>
             <p className="text-center text-surface-400 mb-12 max-w-xl mx-auto">
-              No complicated setup. No technical knowledge required. Just prove what you can do.
+              No complicated setup. No crypto knowledge required. Just prove what you can do.
             </p>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -127,6 +127,81 @@ export default function HomePage() {
                 title="Earn & Share"
                 description="Get your verified badge, build your portfolio, and share it everywhere — LinkedIn, Twitter, your website."
               />
+            </div>
+          </div>
+
+          {/* How You Earn Section - NEW */}
+          <div className="mt-32">
+            <h2 className="text-3xl sm:text-4xl font-bold text-center text-white mb-4">
+              💰 How You Actually Earn
+            </h2>
+            <p className="text-center text-surface-400 mb-12 max-w-xl mx-auto">
+              Multiple ways to monetize your proven skills. No gatekeeping.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <EarnCard
+                icon={<Gift className="w-6 h-6 text-purple-400" />}
+                title="Weekly Prize Pools"
+                amount="Up to $500/week"
+                description="Top performers in each category win from the weekly prize pool. More badges = higher chance to win."
+                tag="Most Popular"
+                tagColor="bg-purple-500"
+              />
+              <EarnCard
+                icon={<DollarSign className="w-6 h-6 text-green-400" />}
+                title="Sponsored Challenges"
+                amount="$50-500 per challenge"
+                description="Brands sponsor challenges with real cash prizes. Complete them, win the reward. Simple."
+                tag="High Reward"
+                tagColor="bg-green-500"
+              />
+              <EarnCard
+                icon={<Users className="w-6 h-6 text-brand-400" />}
+                title="Referral Bonuses"
+                amount="$5 per referral"
+                description="Invite friends and earn $5 for each one who completes their first challenge. No limit."
+                tag="Passive Income"
+                tagColor="bg-brand-500"
+              />
+              <EarnCard
+                icon={<Target className="w-6 h-6 text-amber-400" />}
+                title="Get Hired"
+                amount="Freelance & Jobs"
+                description="Employers browse verified profiles. Your badges are your resume. Get discovered for paid gigs."
+                tag="Career Boost"
+                tagColor="bg-amber-500"
+              />
+            </div>
+          </div>
+
+          {/* Streak & Gamification - NEW */}
+          <div className="mt-32">
+            <div className="card bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/20 p-8 sm:p-12 rounded-2xl">
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="flex-1 text-center md:text-left">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/20 text-orange-400 text-sm mb-4">
+                    <Flame className="w-4 h-4" />
+                    Daily Streaks
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+                    🔥 Build Your Streak, Multiply Your Rewards
+                  </h2>
+                  <p className="text-surface-400 mb-6">
+                    Complete at least one challenge every day to build your streak. 
+                    The longer your streak, the bigger your multiplier on XP and rewards!
+                  </p>
+                  <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+                    <StreakBadge days={7} multiplier="1.5x" />
+                    <StreakBadge days={30} multiplier="2x" />
+                    <StreakBadge days={100} multiplier="3x" />
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-6xl sm:text-8xl font-bold text-orange-500">🔥</div>
+                  <p className="text-surface-400 mt-2">Don&apos;t break the chain!</p>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -224,6 +299,56 @@ function UseCase({
     <div className="flex items-center gap-3 p-4 rounded-xl bg-surface-800/50 border border-surface-700/50">
       <span className="text-2xl">{emoji}</span>
       <span className="text-surface-300 text-sm">{text}</span>
+    </div>
+  );
+}
+
+function EarnCard({
+  icon,
+  title,
+  amount,
+  description,
+  tag,
+  tagColor
+}: {
+  icon: React.ReactNode;
+  title: string;
+  amount: string;
+  description: string;
+  tag: string;
+  tagColor: string;
+}) {
+  return (
+    <div className="card card-hover p-6 relative overflow-hidden">
+      <div className={`absolute top-4 right-4 px-2 py-1 rounded-full text-xs text-white ${tagColor}`}>
+        {tag}
+      </div>
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 rounded-xl bg-surface-800 flex items-center justify-center shrink-0">
+          {icon}
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-white">{title}</h3>
+          <p className="text-2xl font-bold text-brand-400 mt-1">{amount}</p>
+          <p className="text-surface-400 text-sm mt-2">{description}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StreakBadge({
+  days,
+  multiplier
+}: {
+  days: number;
+  multiplier: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-800/80 border border-surface-700">
+      <span className="text-orange-400 font-bold">{days} days</span>
+      <span className="text-surface-500">→</span>
+      <span className="text-white font-bold">{multiplier} XP</span>
     </div>
   );
 }

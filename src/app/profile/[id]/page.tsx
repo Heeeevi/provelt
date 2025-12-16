@@ -16,6 +16,9 @@ import {
   Copy,
   CheckCircle,
   ExternalLink,
+  Flame,
+  Gift,
+  Users,
 } from 'lucide-react';
 import { PageContainer, Header } from '@/components/layout';
 import { Button } from '@/components/ui/button';
@@ -190,20 +193,70 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
               )}
 
               {/* Stats Row */}
-              <div className="mt-6 grid grid-cols-3 gap-6 w-full max-w-xs">
+              <div className="mt-6 grid grid-cols-4 gap-4 w-full max-w-sm">
                 <div className="text-center">
                   <p className="text-lg font-bold text-white">{profile.total_points}</p>
                   <p className="text-xs text-surface-500">XP</p>
                 </div>
                 <div className="text-center">
                   <p className="text-lg font-bold text-white">{profile.submissions_count}</p>
-                  <p className="text-xs text-surface-500">Completed</p>
+                  <p className="text-xs text-surface-500">Done</p>
                 </div>
                 <div className="text-center">
                   <p className="text-lg font-bold text-white">{profile.badges_count}</p>
                   <p className="text-xs text-surface-500">Badges</p>
                 </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-orange-500 flex items-center justify-center gap-1">
+                    <Flame className="w-4 h-4" />
+                    {(profile as any).streak_days || 0}
+                  </p>
+                  <p className="text-xs text-surface-500">Streak</p>
+                </div>
               </div>
+
+              {/* Streak & Referral Cards - Only on own profile */}
+              {isOwnProfile && (
+                <div className="mt-6 w-full max-w-sm space-y-3">
+                  {/* Streak Card */}
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                        <Flame className="w-5 h-5 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          {(profile as any).streak_days || 0} Day Streak
+                        </p>
+                        <p className="text-xs text-surface-400">
+                          {((profile as any).streak_days || 0) >= 7 ? '1.5x XP Multiplier Active!' : 'Keep going for bonus XP!'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-2xl">🔥</div>
+                  </div>
+
+                  {/* Referral Card */}
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-brand-500/10 to-purple-500/10 border border-brand-500/20">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-brand-500/20 flex items-center justify-center">
+                        <Gift className="w-5 h-5 text-brand-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">Invite Friends</p>
+                        <p className="text-xs text-surface-400">Earn $5 per referral</p>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="outline" className="text-xs" onClick={() => {
+                      const referralLink = `${window.location.origin}/auth/login?ref=${userId}`;
+                      navigator.clipboard.writeText(referralLink);
+                    }}>
+                      <Copy className="w-3 h-3 mr-1" />
+                      Copy Link
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Edit Profile Button */}
               {isOwnProfile && (
