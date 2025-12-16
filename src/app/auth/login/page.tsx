@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Mail, 
   Wallet, 
@@ -21,6 +21,8 @@ import {
   EyeOff,
   UserPlus,
   LogIn,
+  X,
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +47,7 @@ export default function LoginPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const [showWalletOption, setShowWalletOption] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
   
   const { publicKey, connected } = useWallet();
   const { setVisible } = useWalletModal();
@@ -66,7 +68,7 @@ export default function LoginPage() {
       if (error) {
         console.error('Login error:', error);
         if (error.message.includes('Invalid login credentials')) {
-          throw new Error('Email atau password salah. Coba lagi atau daftar akun baru.');
+          throw new Error('Invalid email or password. Please try again or create a new account.');
         }
         throw error;
       }
@@ -75,7 +77,7 @@ export default function LoginPage() {
         router.push('/feed');
       }
     } catch (err: any) {
-      setError(err.message || 'Login gagal');
+      setError(err.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
@@ -89,12 +91,12 @@ export default function LoginPage() {
 
     // Validate password
     if (password.length < 6) {
-      setError('Password minimal 6 karakter');
+      setError('Password must be at least 6 characters');
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Password tidak sama');
+      setError('Passwords do not match');
       return;
     }
 
@@ -112,14 +114,14 @@ export default function LoginPage() {
       if (error) {
         console.error('Signup error:', error);
         if (error.message.includes('already registered')) {
-          throw new Error('Email sudah terdaftar. Silakan login.');
+          throw new Error('Email already registered. Please sign in instead.');
         }
         throw error;
       }
 
       // Check if email confirmation is required
       if (data.user && !data.session) {
-        setSuccess('Akun berhasil dibuat! Cek email untuk konfirmasi, atau langsung login.');
+        setSuccess('Account created! Check your email to confirm, or try signing in.');
         setIsSignUp(false);
         setPassword('');
         setConfirmPassword('');
@@ -128,7 +130,7 @@ export default function LoginPage() {
         router.push('/feed');
       }
     } catch (err: any) {
-      setError(err.message || 'Gagal membuat akun');
+      setError(err.message || 'Failed to create account');
     } finally {
       setIsLoading(false);
     }
@@ -141,8 +143,9 @@ export default function LoginPage() {
     if (!connected) {
       try {
         setVisible(true);
+        setShowWalletModal(false);
       } catch (err) {
-        setError('Gagal membuka wallet. Pastikan kamu sudah install wallet Solana.');
+        setError('Failed to open wallet. Make sure you have a Solana wallet installed.');
       }
       return;
     }
@@ -157,6 +160,85 @@ export default function LoginPage() {
       {/* Background Effects */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-brand-500/10 via-transparent to-transparent" />
       
+      {/* Wallet Login Modal */}
+      <AnimatePresence>
+        {showWalletModal && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+              onClick={() => setShowWalletModal(false)}
+            />
+            
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-x-4 top-1/2 -translate-y-1/2 max-w-sm mx-auto z-50"
+            >
+              <Card className="border-brand-500/30 shadow-2xl shadow-brand-500/20">
+                <CardHeader className="relative text-center pb-2">
+                  <button
+                    onClick={() => setShowWalletModal(false)}
+                    className="absolute right-4 top-4 text-surface-400 hover:text-white transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                  
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
+                    <Wallet className="w-8 h-8 text-white" />
+                  </div>
+                  
+                  <CardTitle className="text-xl">Connect Wallet</CardTitle>
+                  <CardDescription>
+                    Use your Solana wallet for Web3 features
+                  </CardDescription>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  {/* Benefits */}
+                  <div className="space-y-2 p-3 rounded-lg bg-surface-800/50">
+                    <div className="flex items-center gap-2 text-sm text-surface-300">
+                      <Zap className="w-4 h-4 text-amber-500" />
+                      <span>Mint NFT badges on Solana</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-surface-300">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>Permanent blockchain proof</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-surface-300">
+                      <Sparkles className="w-4 h-4 text-purple-500" />
+                      <span>Trade & showcase your badges</span>
+                    </div>
+                  </div>
+                  
+                  {/* Connect Button */}
+                  <Button
+                    className="w-full h-12"
+                    onClick={handleWalletLogin}
+                  >
+                    <Wallet className="w-4 h-4 mr-2" />
+                    {connected ? `Connected: ${publicKey?.toString().slice(0, 8)}...` : 'Connect Wallet'}
+                  </Button>
+                  
+                  {/* Skip */}
+                  <button
+                    onClick={() => setShowWalletModal(false)}
+                    className="w-full text-center text-sm text-surface-500 hover:text-surface-300 transition-colors"
+                  >
+                    Skip for now — I'll use email
+                  </button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -185,12 +267,12 @@ export default function LoginPage() {
               <span className="text-white">LT</span>
             </div>
             <CardTitle className="text-xl">
-              {isSignUp ? 'Buat Akun Baru' : 'Selamat Datang!'}
+              {isSignUp ? 'Create Account' : 'Welcome Back!'}
             </CardTitle>
             <CardDescription>
               {isSignUp 
-                ? 'Daftar gratis dan mulai buktikan skill-mu' 
-                : 'Masuk untuk melanjutkan perjalananmu'}
+                ? 'Sign up free and start proving your skills' 
+                : 'Sign in to continue your journey'}
             </CardDescription>
           </CardHeader>
 
@@ -200,19 +282,19 @@ export default function LoginPage() {
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="flex items-center gap-2 text-surface-400">
                   <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  <span>100% Gratis</span>
+                  <span>100% Free</span>
                 </div>
                 <div className="flex items-center gap-2 text-surface-400">
                   <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span>Dapat XP & badge</span>
+                  <span>Earn XP & badges</span>
                 </div>
                 <div className="flex items-center gap-2 text-surface-400">
                   <Users className="w-4 h-4 text-brand-500 shrink-0" />
-                  <span>Gabung 10K+ user</span>
+                  <span>Join 10K+ users</span>
                 </div>
                 <div className="flex items-center gap-2 text-surface-400">
                   <Gift className="w-4 h-4 text-purple-500 shrink-0" />
-                  <span>Menangkan hadiah</span>
+                  <span>Win real rewards</span>
                 </div>
               </div>
             )}
@@ -275,7 +357,7 @@ export default function LoginPage() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-500" />
                   <Input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Konfirmasi Password"
+                    placeholder="Confirm Password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
@@ -294,19 +376,19 @@ export default function LoginPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {isSignUp ? 'Membuat akun...' : 'Masuk...'}
+                    {isSignUp ? 'Creating account...' : 'Signing in...'}
                   </>
                 ) : (
                   <>
                     {isSignUp ? (
                       <>
                         <UserPlus className="w-4 h-4 mr-2" />
-                        Daftar Sekarang
+                        Create Account
                       </>
                     ) : (
                       <>
                         <LogIn className="w-4 h-4 mr-2" />
-                        Masuk
+                        Sign In
                       </>
                     )}
                   </>
@@ -326,9 +408,9 @@ export default function LoginPage() {
                 className="text-sm text-surface-400 hover:text-white transition-colors"
               >
                 {isSignUp ? (
-                  <>Sudah punya akun? <span className="text-brand-500">Masuk</span></>
+                  <>Already have an account? <span className="text-brand-500">Sign in</span></>
                 ) : (
-                  <>Belum punya akun? <span className="text-brand-500">Daftar gratis</span></>
+                  <>Don't have an account? <span className="text-brand-500">Sign up free</span></>
                 )}
               </button>
             </div>
@@ -339,48 +421,40 @@ export default function LoginPage() {
                 <span className="w-full border-t border-surface-800" />
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-surface-900 px-2 text-surface-500">atau</span>
+                <span className="bg-surface-900 px-2 text-surface-500">or</span>
               </div>
             </div>
 
-            {/* Wallet Option */}
-            {!showWalletOption ? (
-              <button
-                type="button"
-                onClick={() => setShowWalletOption(true)}
-                className="w-full text-center text-sm text-surface-500 hover:text-surface-300 transition-colors"
-              >
-                <span className="flex items-center justify-center gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  Punya crypto wallet? Login dengan wallet
-                </span>
-              </button>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-xs text-surface-500 text-center">
-                  Connect wallet untuk mint NFT badge (opsional)
-                </p>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleWalletLogin}
-                  disabled={isLoading}
-                >
-                  <Wallet className="w-4 h-4 mr-2" />
-                  {connected ? `Connected: ${publicKey?.toString().slice(0, 8)}...` : 'Connect Wallet'}
-                </Button>
+            {/* Wallet Option - Now a Card */}
+            <div 
+              onClick={() => setShowWalletModal(true)}
+              className="p-4 rounded-xl border border-surface-700 bg-gradient-to-r from-surface-800/50 to-surface-800/30 hover:border-brand-500/50 hover:from-brand-500/10 hover:to-purple-500/10 transition-all cursor-pointer group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Wallet className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-white group-hover:text-brand-400 transition-colors">
+                    Connect with Wallet
+                  </p>
+                  <p className="text-xs text-surface-500">
+                    Use Phantom, Solflare, or other Solana wallets
+                  </p>
+                </div>
+                <Sparkles className="w-5 h-5 text-surface-600 group-hover:text-brand-400 transition-colors" />
               </div>
-            )}
+            </div>
 
             {/* Terms */}
             <p className="text-xs text-surface-500 text-center">
-              Dengan melanjutkan, kamu setuju dengan{' '}
+              By continuing, you agree to our{' '}
               <Link href="/terms" className="text-brand-500 hover:underline">
-                Syarat & Ketentuan
+                Terms of Service
               </Link>{' '}
-              dan{' '}
+              and{' '}
               <Link href="/privacy" className="text-brand-500 hover:underline">
-                Kebijakan Privasi
+                Privacy Policy
               </Link>
             </p>
           </CardContent>
