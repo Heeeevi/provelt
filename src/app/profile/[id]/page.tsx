@@ -19,6 +19,8 @@ import {
   Flame,
   Gift,
   Users,
+  Rocket,
+  UserCircle,
 } from 'lucide-react';
 import { PageContainer, Header } from '@/components/layout';
 import { Button } from '@/components/ui/button';
@@ -92,8 +94,10 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
     );
   }
 
-  // Error state
+  // Error state - different handling for own profile vs others
   if (error || !profile) {
+    const isOwnProfile = currentUserId === userId;
+    
     return (
       <PageContainer>
         <Header 
@@ -105,10 +109,60 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
           }
         />
         <div className="flex items-center justify-center min-h-[60vh]">
-          <ErrorState 
-            message={error?.message || 'Profile not found'}
-            onRetry={refetch}
-          />
+          {isOwnProfile ? (
+            // Own profile not found - encourage to get started
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center max-w-sm mx-auto px-4"
+            >
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-brand-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-6">
+                <UserCircle className="w-10 h-10 text-brand-400" />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">
+                Welcome to PROVELT!
+              </h2>
+              <p className="text-surface-400 mb-6">
+                Your profile is being set up. Start your journey by completing a challenge to earn your first badge!
+              </p>
+              <div className="space-y-3">
+                <Link href="/challenges" className="block">
+                  <Button className="w-full gap-2">
+                    <Rocket className="w-4 h-4" />
+                    Explore Challenges
+                  </Button>
+                </Link>
+                <Link href="/feed" className="block">
+                  <Button variant="outline" className="w-full">
+                    Browse Feed
+                  </Button>
+                </Link>
+              </div>
+              <p className="text-xs text-surface-500 mt-4">
+                💡 Tip: Submit at least one challenge to unlock your full profile!
+              </p>
+            </motion.div>
+          ) : (
+            // Other user's profile not found
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center max-w-sm mx-auto px-4"
+            >
+              <div className="w-20 h-20 rounded-full bg-surface-800 flex items-center justify-center mx-auto mb-6">
+                <UserCircle className="w-10 h-10 text-surface-500" />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">
+                Profile Not Available
+              </h2>
+              <p className="text-surface-400 mb-6">
+                This user hasn't set up their profile yet or the profile doesn't exist.
+              </p>
+              <Button variant="outline" onClick={() => router.back()}>
+                Go Back
+              </Button>
+            </motion.div>
+          )}
         </div>
       </PageContainer>
     );

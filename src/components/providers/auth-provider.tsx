@@ -1,7 +1,7 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from 'react';
+import { createClient, ensureProfileExists, ensureWalletProfileExists } from '@/lib/supabase/client';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { resetFeedSeed } from '@/hooks/use-feed';
 import type { User, Session } from '@supabase/supabase-js';
@@ -89,6 +89,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
           resetFeedSeed();
         }
+
+        // Ensure profile exists when user signs in
+        if (event === 'SIGNED_IN' && session?.user) {
+          try {
+            await ensureProfileExists(
+              session.user.id,
+              session.user.email,
+              session.user.user_metadata
+            );
+          } catch (err) {
+            console.error('Failed to ensure profile exists:', err);
+          }
+        }
       }
     );
 
@@ -105,6 +118,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }, 500);
     return () => clearTimeout(timer);
   }, []);
+
+  // Track if we've already created profile for this wallet to avoid duplicate calls
+  const walletProfileCreatedRef = useRef<string | null>(null);
+
+  // Ensure wallet profile exists when wallet connects
+  useEffect(() => {
+    const createWalletProfile = async () => {
+      if (isWalletConnected && walletAddress && !user) {
+        // Only create profile if we haven't already for this wallet address
+        if (walletProfileCreatedRef.current !== walletAddress) {
+          try {
+            console.log('Creating profile for wallet:', walletAddress);
+            await ensureWalletProfileExists(walletAddress);
+            walletProfileCreatedRef.current = walletAddress;
+            // Reset feed seed for new user
+            resetFeedSeed();
+          } catch (err) {
+            console.error('Failed to create wallet profile:', err);
+          }
+        }
+      }
+    };
+
+    createWalletProfile();
+  }, [isWalletConnected, walletAddress, user]);
 
   const signOut = async () => {
     // Reset feed seed for new random order on next login

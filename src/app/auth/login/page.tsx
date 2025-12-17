@@ -28,7 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase } from '@/lib/supabase/client';
+import { supabase, ensureProfileExists, ensureWalletProfileExists } from '@/lib/supabase/client';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { LOGO_URL, APP_NAME } from '@/lib/constants';
@@ -74,6 +74,8 @@ export default function LoginPage() {
       }
 
       if (data.user) {
+        // Ensure profile exists before redirecting
+        await ensureProfileExists(data.user.id, data.user.email, data.user.user_metadata);
         router.push('/feed');
       }
     } catch (err: any) {
@@ -121,12 +123,15 @@ export default function LoginPage() {
 
       // Check if email confirmation is required
       if (data.user && !data.session) {
+        // Create profile even without session (user needs to verify email)
+        await ensureProfileExists(data.user.id, data.user.email, data.user.user_metadata);
         setSuccess('Account created! Check your email to confirm, or try signing in.');
         setIsSignUp(false);
         setPassword('');
         setConfirmPassword('');
-      } else if (data.session) {
+      } else if (data.session && data.user) {
         // Auto-logged in (email confirmation disabled)
+        await ensureProfileExists(data.user.id, data.user.email, data.user.user_metadata);
         router.push('/feed');
       }
     } catch (err: any) {
@@ -151,6 +156,12 @@ export default function LoginPage() {
     }
 
     if (publicKey) {
+      // Ensure wallet profile exists before redirecting
+      try {
+        await ensureWalletProfileExists(publicKey.toString());
+      } catch (err) {
+        console.error('Failed to create wallet profile:', err);
+      }
       router.push('/feed');
     }
   };
